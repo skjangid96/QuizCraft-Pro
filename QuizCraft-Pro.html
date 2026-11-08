@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizCraft Pro - MCQ Generator & Evaluator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold tracking-tight text-blue-400">QuizCraft Pro</h1>
+            <p class="text-slate-400 text-sm mt-1">Create, take, and instantly evaluate multiple-choice tests.</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex justify-center space-x-4 mb-6">
+            <button onclick="switchTab('creator')" id="btn-creator" class="px-5 py-2 rounded-lg font-semibold bg-blue-600 text-white transition">1. Build Test</button>
+            <button onclick="switchTab('taker')" id="btn-taker" class="px-5 py-2 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white transition">2. Take Test</button>
+        </div>
+
+        <!-- TAB 1: CREATOR -->
+        <div id="tab-creator" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-xl font-bold mb-4 text-blue-300">Add Questions</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Question Text</label>
+                    <input type="text" id="qText" placeholder="E.g., What is the capital of France?" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Option A</label>
+                        <input type="text" id="optA" placeholder="London" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Option B</label>
+                        <input type="text" id="optB" placeholder="Berlin" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Option C</label>
+                        <input type="text" id="optC" placeholder="Paris" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Option D</label>
+                        <input type="text" id="optD" placeholder="Madrid" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Correct Answer</label>
+                    <select id="correctAnswer" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
+                        <option value="0">Option A</option>
+                        <option value="1">Option B</option>
+                        <option value="2" selected>Option C</option>
+                        <option value="3">Option D</option>
+                    </select>
+                </div>
+                <button onclick="addQuestion()" class="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded-lg transition shadow-lg">Add Question to Test</button>
+            </div>
+
+            <!-- Question Count & Preview List -->
+            <div class="mt-8 border-t border-slate-800 pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-semibold text-slate-300">Added Questions (<span id="questionCount">0</span>)</h3>
+                    <button onclick="clearQuiz()" class="text-red-400 text-xs hover:underline">Clear All</button>
+                </div>
+                <div id="questionsList" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    <p class="text-slate-500 text-sm italic">No questions added yet. Add at least one to start testing.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TAKER & EVALUATOR -->
+        <div id="tab-taker" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div id="quizActiveContainer">
+                <h2 class="text-xl font-bold mb-4 text-blue-300">Live Test Mode</h2>
+                <div id="liveQuizForm" class="space-y-6">
+                    <!-- Dynamic Questions Render Here -->
+                </div>
+                <button onclick="evaluateTest()" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-500 font-bold py-3 rounded-lg transition shadow-lg">Submit & Evaluate</button>
+            </div>
+
+            <!-- Evaluation Report Card -->
+            <div id="resultContainer" class="hidden text-center py-6">
+                <h2 class="text-2xl font-bold text-emerald-400 mb-2">Test Evaluated Successfully!</h2>
+                <div class="bg-slate-800 p-6 rounded-xl max-w-sm mx-auto my-4 border border-slate-700">
+                    <p class="text-slate-400 text-sm">Your Final Score</p>
+                    <p id="scoreDisplay" class="text-5xl font-black text-white my-2">0 / 0</p>
+                    <p id="percentageDisplay" class="text-blue-400 font-semibold">0%</p>
+                </div>
+                <button onclick="switchTab('taker')" class="mt-4 px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium text-sm transition">Retake Test</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        let quizData = JSON.parse(localStorage.getItem('quizData')) || [];
+
+        function switchTab(tab) {
+            if (tab === 'creator') {
+                document.getElementById('tab-creator').classList.remove('hidden');
+                document.getElementById('tab-taker').classList.add('hidden');
+                document.getElementById('btn-creator').className = "px-5 py-2 rounded-lg font-semibold bg-blue-600 text-white transition";
+                document.getElementById('btn-taker').className = "px-5 py-2 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white transition";
+            } else {
+                if (quizData.length === 0) {
+                    alert("Please add at least one question in the 'Build Test' tab first!");
+                    return;
+                }
+                document.getElementById('tab-creator').classList.add('hidden');
+                document.getElementById('tab-taker').classList.remove('hidden');
+                document.getElementById('btn-taker').className = "px-5 py-2 rounded-lg font-semibold bg-blue-600 text-white transition";
+                document.getElementById('btn-creator').className = "px-5 py-2 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white transition";
+                
+                document.getElementById('quizActiveContainer').classList.remove('hidden');
+                document.getElementById('resultContainer').classList.add('hidden');
+                renderLiveQuiz();
+            }
+        }
+
+        function addQuestion() {
+            const qText = document.getElementById('qText').value.trim();
+            const opts = [
+                document.getElementById('optA').value.trim(),
+                document.getElementById('optB').value.trim(),
+                document.getElementById('optC').value.trim(),
+                document.getElementById('optD').value.trim()
+            ];
+            const correct = parseInt(document.getElementById('correctAnswer').value);
+
+            if (!qText || opts.some(o => o === "")) {
+                alert("Please fill out the question and all 4 options.");
+                return;
+            }
+
+            quizData.push({ q: qText, options: opts, correct: correct });
+            localStorage.setItem('quizData', JSON.stringify(quizData));
+
+            // Reset inputs
+            document.getElementById('qText').value = "";
+            document.getElementById('optA').value = "";
+            document.getElementById('optB').value = "";
+            document.getElementById('optC').value = "";
+            document.getElementById('optD').value = "";
+
+            updateQuestionList();
+        }
+
+        function updateQuestionList() {
+            const list = document.getElementById('questionsList');
+            document.getElementById('questionCount').innerText = quizData.length;
+
+            if (quizData.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-sm italic">No questions added yet. Add at least one to start testing.</p>`;
+                return;
+            }
+
+            list.innerHTML = quizData.map((item, idx) => `
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 text-sm flex justify-between items-center">
+                    <div><span class="font-bold text-blue-400">Q${idx + 1}:</span> ${item.q}</div>
+                    <button onclick="deleteQuestion(${idx})" class="text-red-400 hover:text-red-300 ml-2">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteQuestion(index) {
+            quizData.splice(index, 1);
+            localStorage.setItem('quizData', JSON.stringify(quizData));
+            updateQuestionList();
+        }
+
+        function clearQuiz() {
+            if (confirm("Clear all questions?")) {
+                quizData = [];
+                localStorage.removeItem('quizData');
+                updateQuestionList();
+            }
+        }
+
+        function renderLiveQuiz() {
+            const container = document.getElementById('liveQuizForm');
+            container.innerHTML = quizData.map((item, qIdx) => `
+                <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/60">
+                    <p class="font-semibold text-white mb-3">Q${qIdx + 1}. ${item.q}</p>
+                    <div class="space-y-2">
+                        ${item.options.map((opt, oIdx) => `
+                            <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                                <input type="radio" name="question_${qIdx}" value="${oIdx}" class="text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <span class="text-slate-300 text-sm">${opt}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function evaluateTest() {
+            let score = 0;
+            quizData.forEach((item, qIdx) => {
+                const selected = document.querySelector(`input[name="question_${qIdx}"]:checked`);
+                if (selected && parseInt(selected.value) === item.correct) {
+                    score++;
+                }
+            });
+
+            const percentage = Math.round((score / quizData.length) * 100);
+            document.getElementById('scoreDisplay').innerText = `${score} / ${quizData.length}`;
+            document.getElementById('percentageDisplay').innerText = `${percentage}% Accuracy`;
+
+            document.getElementById('quizActiveContainer').classList.add('hidden');
+            document.getElementById('resultContainer').classList.remove('hidden');
+        }
+
+        // Initialize view on load
+        updateQuestionList();
+    </script>
+</body>
+</html>
